@@ -20,9 +20,8 @@ dependencies {
     implementation ("org.apache.opennlp:opennlp-tools:2.1.1")
     implementation ("org.mariadb.jdbc:mariadb-java-client:3.1.2")
     implementation("ch.qos.logback:logback-classic:1.4.7")
-
-
-
+    implementation ("com.squareup.retrofit2:retrofit:2.10.0")
+    implementation ("com.squareup.retrofit2:converter-scalars:2.1.0")
 }
 
 tasks.withType<JavaCompile> {

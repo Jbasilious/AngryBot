@@ -1,0 +1,3 @@
+[submodule "Brancoin-web-slim"]
+	path = Brancoin-web-slim
+	url = https://github.com/NavjotPanesar/Brancoin-web-slim

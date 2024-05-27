@@ -25,5 +25,23 @@ services:
       DB_USER: root
       DB_PASS: example
       BOT_TOKEN: token_placeholder
+      CARD_URL: "http://cardmaker:8081/"
     depends_on:
       - db
+
+  cardmaker:
+    build: ./Brancoin-web-slim/bot/
+    restart: always
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PASSWORD=example
+      - POSTGRES_USER=root
+      - POSTGRES_DB=bagana
+      - DB_TYPE=mariadb+mariadbconnector
+      - WEB_PORT=8081
+    ports:
+      - 8081:8081
+    depends_on:
+      - db
+    volumes:
+      - ./Brancoin-web-slim/bot/:/usr/src/app
