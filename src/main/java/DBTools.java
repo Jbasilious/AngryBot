@@ -1,4 +1,6 @@
 import java.sql.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DBTools {
     private static Connection connection;
@@ -63,6 +65,34 @@ public class DBTools {
     protected static int getLatestCardId() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "SELECT max(id) from cards")) {
+            var res = statement.executeQuery();
+            res.next();
+            return res.getInt(1);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return 0;
+    }
+
+    protected static Set<String> getCardTitles() throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT title from cards")) {
+            var res = statement.executeQuery();
+            Set<String> titles = new HashSet<String>();
+            while (res.next()) {
+                titles.add(res.getString(1));
+            }
+            return titles;
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return new HashSet<>();
+    }
+
+    protected static int getCardIdForTitle(String cardTitle) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT id from cards where title = ?")) {
+            statement.setString(1, cardTitle);
             var res = statement.executeQuery();
             res.next();
             return res.getInt(1);

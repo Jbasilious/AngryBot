@@ -10,6 +10,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Set;
 
 public class Card {
     private static final String[] cardStyleList = {"normal", "ritual", "effect", "fusion", "link", "shiny","spell","synchro","trap","xyz"};
@@ -45,7 +46,19 @@ public class Card {
 
             var messageText = event.getMessage().getContentDisplay();
             var params = event.getMessage().getContentDisplay().split(" ");
-            var card_id = Integer.parseInt(params[1]);
+
+            Integer card_id = null;
+            try {
+                card_id = Integer.parseInt(params[1]);
+            } catch (Exception ex) {
+
+            }
+            if (card_id == null) {
+                String cardName = params[1];
+                Set<String> allCardTitles = DBTools.getCardTitles();
+                var searchRes = me.xdrop.fuzzywuzzy.FuzzySearch.extractOne(cardName, allCardTitles);
+                card_id = DBTools.getCardIdForTitle(searchRes.getString());
+            }
             var isGif = params.length >= 3 && (params[2]).equals("gif");
 
             Retrofit retrofit = new Retrofit.Builder()
@@ -89,8 +102,12 @@ public class Card {
                     "myPic",
                     RequestBody.create(stream.readAllBytes(), MediaType.parse("image/*"))
             );
-            var res = service.uploadImage(RequestBody.create(image_name, MediaType.parse("text/plain")), part).execute();
-
+            int retryCount = 0;
+            retrofit2.Response<String> res = null;
+            do {
+                res = service.uploadImage(RequestBody.create(image_name, MediaType.parse("text/plain")), part).execute();
+                retryCount++;
+            } while (res.body() == null && retryCount <=3);
             event.getMessage().reply(res.body() == null ? "nope": res.body()).queue();
 
             DBTools.closeConnection();

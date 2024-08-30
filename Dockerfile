@@ -8,7 +8,7 @@ RUN gradle build
 # Package stage
 
 FROM openjdk:latest
-ENV JAR_NAME=AngryBot-2.0.0-all.jar
+ENV JAR_NAME=AngryBot-3.0.0-all.jar
 ENV APP_HOME=/usr/app/
 WORKDIR $APP_HOME
 COPY --from=BUILD $APP_HOME .
