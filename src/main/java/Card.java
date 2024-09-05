@@ -16,6 +16,7 @@ public class Card {
     private static final String[] cardStyleList = {"normal", "ritual", "effect", "fusion", "link", "shiny","spell","synchro","trap","xyz"};
     private static final String[] attributeList = {"Light", "Dark", "Earth", "Fire", "Wind", "Spell","Trap","Divine"};
     private static final String[] typeList = {"Gooner", "Warlock", "Wizard", "Mage", "Paladin", "Demon","Gunk Lord","Retard"};
+    private static final Random random = new Random();
 
     public static void addCard(MessageReceivedEvent event) {
         try {
@@ -56,8 +57,19 @@ public class Card {
             if (card_id == null) {
                 String cardName = params[1];
                 Set<String> allCardTitles = DBTools.getCardTitles();
-                var searchRes = me.xdrop.fuzzywuzzy.FuzzySearch.extractOne(cardName, allCardTitles);
-                card_id = DBTools.getCardIdForTitle(searchRes.getString());
+                var cardNameSelected = "";
+                if (cardName.equalsIgnoreCase("random")){
+                    int randomIndex = random.nextInt(allCardTitles.size());
+                    var it = allCardTitles.iterator();
+                    for (int i = 0; i < randomIndex; i++) {
+                        it.next();
+                    }
+                    cardNameSelected = it.next();
+                } else {
+                    var searchRes = me.xdrop.fuzzywuzzy.FuzzySearch.extractOne(cardName, allCardTitles);
+                    cardNameSelected = searchRes.getString();
+                }
+                card_id = DBTools.getCardIdForTitle(cardNameSelected);
             }
             var isGif = params.length >= 3 && (params[2]).equals("gif");
 
@@ -68,7 +80,13 @@ public class Card {
 
             CardService service = retrofit.create(CardService.class);
 
-            var res = isGif ? service.getSummon(card_id).execute() : service.getCard(card_id).execute();
+            int retryCount = 0;
+            retrofit2.Response<ResponseBody> res = null;
+            do {
+                res = isGif ? service.getSummon(card_id).execute() : service.getCard(card_id).execute();
+                retryCount++;
+            } while (res.body() == null && retryCount <=3);
+
             ResponseBody body = res.body();
             InputStream imageStream = body.byteStream();
             event.getMessage().reply("Ebic card !!!").addFiles(FileUpload.fromData(imageStream, isGif ? "card.gif" : "card.png")).queue();
