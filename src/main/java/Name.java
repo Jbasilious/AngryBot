@@ -6,7 +6,7 @@ public class Name {
 
     public static void run(MessageReceivedEvent event) {
 
-        if (Tools.modCheck(event)) {
+        if (Tools.modCheck(event,true)) {
 
             String mentionedUser = "";
             String newName = "";

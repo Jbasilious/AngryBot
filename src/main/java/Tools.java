@@ -1,4 +1,5 @@
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import opennlp.tools.cmdline.parser.ParserTool;
@@ -62,10 +63,21 @@ public class Tools {
         }
     }
 
-    static boolean modCheck(MessageReceivedEvent event) {
-        if (event.getAuthor().getId().equals("328689134606614528")) return true;
+    static boolean modCheck(MessageReceivedEvent event, Boolean Gorb) {
+        if (Gorb && event.getAuthor().getId().equals("328689134606614528")) return true;
         else {
             ListIterator<Role> roles = Objects.requireNonNull(event.getMember()).getRoles().listIterator();
+            while (roles.hasNext()) {
+                if (roles.next().hasPermission(Permission.MODERATE_MEMBERS)) return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean modCheck(Member member, Boolean Gorb) {
+        if (Gorb && member.getId().equals("328689134606614528")) return true;
+        else {
+            ListIterator<Role> roles = Objects.requireNonNull(member).getRoles().listIterator();
             while (roles.hasNext()) {
                 if (roles.next().hasPermission(Permission.MODERATE_MEMBERS)) return true;
             }
@@ -280,6 +292,15 @@ public class Tools {
             boolean isBetween3And4PM = hour >= 15 && hour < 16;
 
             return (isThursday && isBetween3And5PM) || (!isThursday && isBetween3And4PM);
+        }
+
+        public static String camelCase(String input){
+            String output = "";
+            String[] temp = input.split(" ");
+            for(String s : temp){
+                output += s.substring(0,1).toUpperCase()+s.substring(1).toLowerCase()+" ";
+            }
+        return output.trim();
         }
 
         public static void main (String[]args){

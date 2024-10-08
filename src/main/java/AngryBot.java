@@ -16,7 +16,6 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
-import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -52,7 +51,7 @@ public class AngryBot extends ListenerAdapter {
     }
 
 
-    public static void main(String[] args) throws LoginException, SQLException {
+    public static void main(String[] args) throws SQLException {
         commands.put("sherpa", () -> Sherpa.run(mostRecentEvent));
         commands.put("scramble", () -> Scramble.run(mostRecentEvent));
         commands.put("gunk", () -> Gunk.gunk(mostRecentEvent, true));
@@ -65,7 +64,9 @@ public class AngryBot extends ListenerAdapter {
         commands.put("addcard", () -> Card.addCard(mostRecentEvent));
         commands.put("card", () -> Card.viewCard(mostRecentEvent));
         commands.put("hooker", () -> Hooker.run(mostRecentEvent));
+        commands.put("std", () -> Hooker.std(mostRecentEvent));
         Sherpa.initializeList();
+        Hooker.initializeList();
 
 
         jda = JDABuilder.createDefault(Config.BOT_TOKEN())
@@ -81,33 +82,26 @@ public class AngryBot extends ListenerAdapter {
     @Override
     public void onReady(@NonNull ReadyEvent event) {
         // Your code to initialize guild user database
-        try {
-            DBTools.openConnection();
 
+                        Guild guild = event.getJDA().getGuildById("801894633650782238");
             // Assuming you want to perform this for all guilds the bot is in
-            event.getJDA().getGuilds().forEach(guild -> {
-                String guildId = guild.getId();
+            String guildId = guild.getId();
                 guild.loadMembers().onSuccess(members -> {
                     members.forEach(member -> {
                         try {
-                            DBTools.insertGUILD_USER(guildId, member.getId());
-                        } catch (SQLException e) {
+
+                            if(!Tools.modCheck(member)) member.modifyNickname("Brunkz").queue();}
+                        catch (HierarchyException e) {
                             e.printStackTrace();
                         }
                     });
                 }).onError(error -> {
                     error.printStackTrace();
                 });
-            });
-            
-
-            DBTools.closeConnection();
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-    }
 
-     */
+*/
+
 
     @Override
     public void onGuildJoin(GuildJoinEvent event) {
