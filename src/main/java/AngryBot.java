@@ -1,6 +1,7 @@
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
@@ -10,11 +11,13 @@ import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateTimeOutEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.io.File;
 import java.io.InputStream;
@@ -65,6 +68,7 @@ public class AngryBot extends ListenerAdapter {
         commands.put("card", () -> Card.viewCard(mostRecentEvent));
         commands.put("hooker", () -> Hooker.run(mostRecentEvent));
         commands.put("std", () -> Hooker.std(mostRecentEvent));
+        commands.put("amazon", () -> Amazon.run(mostRecentEvent));
         Sherpa.initializeList();
         Hooker.initializeList();
 
@@ -78,31 +82,47 @@ public class AngryBot extends ListenerAdapter {
                 .build();
     }
 
-/*
+    /*
+        @Override
+        public void onReady(@NonNull ReadyEvent event) {
+            // Your code to initialize guild user database
+
+                            Guild guild = event.getJDA().getGuildById("801894633650782238");
+                // Assuming you want to perform this for all guilds the bot is in
+                String guildId = guild.getId();
+                    guild.loadMembers().onSuccess(members -> {
+                        members.forEach(member -> {
+                            try {
+
+                                if(!Tools.modCheck(member)) member.modifyNickname("Brunkz").queue();}
+                            catch (HierarchyException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    }).onError(error -> {
+                        error.printStackTrace();
+                    });
+            }
+
+
     @Override
     public void onReady(@NonNull ReadyEvent event) {
-        // Your code to initialize guild user database
+        try {
+            DBTools.openConnection();
+            for (Guild g : event.getJDA().getGuilds()) {
+                List<Member> members = g.getMembers();
+                String GID = g.getId();
+                for (Member m : members) {
+                    DBTools.insertGUILD_USER(GID, m.getId());
+                }
 
-                        Guild guild = event.getJDA().getGuildById("801894633650782238");
-            // Assuming you want to perform this for all guilds the bot is in
-            String guildId = guild.getId();
-                guild.loadMembers().onSuccess(members -> {
-                    members.forEach(member -> {
-                        try {
-
-                            if(!Tools.modCheck(member)) member.modifyNickname("Brunkz").queue();}
-                        catch (HierarchyException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                }).onError(error -> {
-                    error.printStackTrace();
-                });
+            }
+            DBTools.closeConnection();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
-
-*/
-
-
+    }
+ */
     @Override
     public void onGuildJoin(GuildJoinEvent event) {
         try {
@@ -151,7 +171,7 @@ public class AngryBot extends ListenerAdapter {
         try {
             DBTools.openConnection();
             int timeout = 1 + DBTools.selectGUILD_USER(event.getGuild().getId(), event.getUser().getId()).getInt("TIMEOUT");
-            DBTools.updateGUILD_USER(event.getGuild().getId(), event.getUser().getId(), null, null, null, null, timeout,null,null);
+            DBTools.updateGUILD_USER(event.getGuild().getId(), event.getUser().getId(), null, null, null, null, timeout, null, null);
             DBTools.closeConnection();
         } catch (SQLException e) {
 
@@ -392,7 +412,7 @@ public class AngryBot extends ListenerAdapter {
             ResultSet set = DBTools.selectGUILD_USER(event.getGuild().getId(), event.getAuthor().getId());
             int total = bananaValue + set.getInt("BANANA_TOTAL");
             int current = bananaValue + set.getInt("BANANA_CURRENT");
-            DBTools.updateGUILD_USER(event.getGuild().getId(), event.getAuthor().getId(), total, current, null, null, null,null,null);
+            DBTools.updateGUILD_USER(event.getGuild().getId(), event.getAuthor().getId(), total, current, null, null, null, null, null);
             DBTools.closeConnection();
         } catch (SQLException e) {
             throw new RuntimeException(e);

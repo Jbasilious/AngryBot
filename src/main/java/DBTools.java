@@ -25,7 +25,7 @@ public class DBTools {
 
     protected static void insertGUILD_USER(String GUILD, String UID) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO GUILD_USER(GUILD, UID,BANANA_TOTAL,BANANA_CURRENT,GUNKED,GUNKS,TIMEOUT,HOOKER,STD) VALUES (?,?,?,?,?,?,?,?,?)")) {
+                "INSERT IGNORE INTO GUILD_USER(GUILD, UID,BANANA_TOTAL,BANANA_CURRENT,GUNKED,GUNKS,TIMEOUT,HOOKER,STD) VALUES (?,?,?,?,?,?,?,?,?)")) {
             statement.setString(1, GUILD);
             statement.setString(2, UID);
             statement.setInt(3, 10);
