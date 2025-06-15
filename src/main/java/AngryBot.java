@@ -1,11 +1,10 @@
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -17,10 +16,14 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.sql.ResultSet;
@@ -47,14 +50,20 @@ public class AngryBot extends ListenerAdapter {
     private static JDA jda;
     private static int charlesCounter = 0; //count charles messages
     private final Set<String> spamTimeoutUsers = new HashSet<>();
-    InputStream in;
+    static final HashMap<String, String> AffiliateMap = new HashMap<>();
 
-    public AngryBot() {
+
+    private final String FEED_URL = Config.FEED_URL();
+    private final String DISCORD_CHANNEL_ID = Config.DISCORD_CHANNEL_ID();
+    private String lastVideoId = null;
+
+
+    public AngryBot() throws SQLException {
         Tools.initializeParser();
-    }
+        Sherpa.initializeList();
+        Hooker.initializeList();
+        Affiliates.initializeList();
 
-
-    public static void main(String[] args) throws SQLException {
         commands.put("sherpa", () -> Sherpa.run(mostRecentEvent));
         commands.put("scramble", () -> Scramble.run(mostRecentEvent));
         commands.put("gunk", () -> Gunk.gunk(mostRecentEvent, true));
@@ -68,18 +77,27 @@ public class AngryBot extends ListenerAdapter {
         commands.put("card", () -> Card.viewCard(mostRecentEvent));
         commands.put("hooker", () -> Hooker.run(mostRecentEvent));
         commands.put("std", () -> Hooker.std(mostRecentEvent));
-        commands.put("amazon", () -> Amazon.run(mostRecentEvent));
-        Sherpa.initializeList();
-        Hooker.initializeList();
+        commands.put("link", () -> Affiliates.links(mostRecentEvent));
+        commands.put("links", () -> Affiliates.links(mostRecentEvent));
+
+        AffiliateMap.forEach((s, s2) -> commands.put(s.toLowerCase(), () -> Affiliates.singleLink(mostRecentEvent)));
 
 
-        jda = JDABuilder.createDefault(Config.BOT_TOKEN())
-                .enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
-                .addEventListeners(new AngryBot())
-                .setChunkingFilter(ChunkingFilter.ALL) // enable member chunking for all guilds
+    }
+
+
+    public static void main(String[] args) throws SQLException {
+        jda = JDABuilder.createDefault(Config.BOT_TOKEN()).enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT).addEventListeners(new AngryBot()).setChunkingFilter(ChunkingFilter.ALL) // enable member chunking for all guilds
                 .setMemberCachePolicy(MemberCachePolicy.ALL) // ignored if chunking enabled
-                .enableIntents(GatewayIntent.GUILD_MEMBERS)
-                .build();
+                .enableIntents(GatewayIntent.GUILD_MEMBERS).build();
+
+    }
+
+
+    @Override
+    public void onReady(ReadyEvent event) {
+        this.jda = event.getJDA(); // Just in case
+        startPolling();
     }
 
     /*
@@ -181,8 +199,6 @@ public class AngryBot extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
 
-        //   event.getGuild().modifyNickname(Objects.requireNonNull(event.getGuild().getMemberById("1149411432778174474")), "No").queue();
-
 
         User user = event.getAuthor();
         String userId = user.getId();
@@ -198,36 +214,10 @@ public class AngryBot extends ListenerAdapter {
         }
         // event.getChannel().sendMessage("I have a boner and it won't go away until i get unbanned").queue();
 
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        //~~~~~~~~~ BANANA DROP HANDLING ~~~~~~~~~~~~~~~
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        int randomNum = ThreadLocalRandom.current().nextInt(0, 100001);
-
-        // Customizable drop rates
-        double regularBananaRate = 1.0 / 20;      // 1/50    chance
-        double rareBananaRate = 1.0 / 500;        // 1/500   chance
-        double epicBananaRate = 1.0 / 2000;       // 1/2000  chance
-        double uniqueBananaRate = 1.0 / 5000;     // 1/5000  chance
-        double legendaryBananaRate = 1.0 / 20000; // 1/20000 chance
-        if (randomNum < regularBananaRate * 100000) {
-            event.getMessage().addReaction(Emoji.fromUnicode("U+1F34C")).queue(); // Regular banana
-            handleBananaEvent(event, 1);
-        } else if (randomNum < (regularBananaRate + rareBananaRate) * 100000) {
-            sendBananaImage(event, "rare_banana.png", 5);
-        } else if (randomNum < (regularBananaRate + rareBananaRate + epicBananaRate) * 100000) {
-            sendBananaImage(event, "epic_banana.png", 10);
-        } else if (randomNum < (regularBananaRate + rareBananaRate + epicBananaRate + uniqueBananaRate) * 100000) {
-            sendBananaImage(event, "unique_banana.png", 25);
-        } else if (randomNum < (regularBananaRate + rareBananaRate + epicBananaRate + uniqueBananaRate + legendaryBananaRate) * 100000) {
-            sendBananaImage(event, "legendary_banana.png", 100);
-        }
-
 
         updateUserMessageTime(userId);
         mostRecentEvent = event;
-
-        ListIterator<Role> roles = Objects.requireNonNull(event.getMember()).getRoles().listIterator();
+        bananaMaster(event);
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         //~~~~~~~~~ COMMAND HANDLING ~~~~~~~~~~~~~~~
@@ -287,7 +277,7 @@ public class AngryBot extends ListenerAdapter {
                 commands.get(commandContent).run();
             } else {
                 // Handle unknown command
-                //event.getChannel().sendMessage("Unknown command: " + content).queue();
+                System.out.println("Unknown command: " + content);
             }
             return;
         }
@@ -300,6 +290,33 @@ public class AngryBot extends ListenerAdapter {
             }
         }
 
+    }
+
+    private void bananaMaster(MessageReceivedEvent event) {
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        //~~~~~~~~~ BANANA DROP HANDLING ~~~~~~~~~~~~~~~
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        int randomNum = ThreadLocalRandom.current().nextInt(0, 100001);
+
+        // Customizable drop rates
+        double regularBananaRate = 1.0 / 20;      // 1/50    chance
+        double rareBananaRate = 1.0 / 500;        // 1/500   chance
+        double epicBananaRate = 1.0 / 2000;       // 1/2000  chance
+        double uniqueBananaRate = 1.0 / 5000;     // 1/5000  chance
+        double legendaryBananaRate = 1.0 / 20000; // 1/20000 chance
+        if (randomNum < regularBananaRate * 100000) {
+            event.getMessage().addReaction(Emoji.fromUnicode("U+1F34C")).queue(); // Regular banana
+            handleBananaEvent(event, 1);
+        } else if (randomNum < (regularBananaRate + rareBananaRate) * 100000) {
+            sendBananaImage(event, "rare_banana.png", 5);
+        } else if (randomNum < (regularBananaRate + rareBananaRate + epicBananaRate) * 100000) {
+            sendBananaImage(event, "epic_banana.png", 10);
+        } else if (randomNum < (regularBananaRate + rareBananaRate + epicBananaRate + uniqueBananaRate) * 100000) {
+            sendBananaImage(event, "unique_banana.png", 25);
+        } else if (randomNum < (regularBananaRate + rareBananaRate + epicBananaRate + uniqueBananaRate + legendaryBananaRate) * 100000) {
+            sendBananaImage(event, "legendary_banana.png", 100);
+        }
     }
 
     private void sendBananaImage(MessageReceivedEvent event, String imageName, int points) {
@@ -420,4 +437,72 @@ public class AngryBot extends ListenerAdapter {
     }
 
 
+    private void startPolling() {
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                Document doc = DocumentBuilderFactory.newInstance()
+                        .newDocumentBuilder()
+                        .parse(new URL(FEED_URL).openStream());
+
+                doc.getDocumentElement().normalize();
+
+                NodeList entries = doc.getElementsByTagName("entry");
+                if (entries.getLength() > 0) {
+                    Element entry = (Element) entries.item(0); // first video entry
+
+                    String videoId = entry.getElementsByTagName("yt:videoId")
+                            .item(0).getTextContent();
+
+                    String title = entry.getElementsByTagName("title")
+                            .item(0).getTextContent();
+
+                    // Find the <link rel="alternate" href="..."> element
+                    NodeList links = entry.getElementsByTagName("link");
+                    String link = null;
+                    for (int i = 0; i < links.getLength(); i++) {
+                        Element linkEl = (Element) links.item(i);
+                        if ("alternate".equals(linkEl.getAttribute("rel"))) {
+                            link = linkEl.getAttribute("href");
+                            break;
+                        }
+                    }
+
+
+                    if (lastVideoId == null) {
+                        lastVideoId = videoId;
+                    } else if (link != null && (!videoId.equals(lastVideoId))) {
+                        System.out.print("post video");
+                        lastVideoId = videoId;
+                        postToDiscord(title, link);
+                    }
+                }
+
+            } catch (Exception e) {
+                System.err.println("Error polling YouTube RSS feed:");
+                e.printStackTrace();
+            }
+        }, 0, 5, TimeUnit.MINUTES); // start immediately, repeat every 5 minutes
+    }
+
+
+    private void postToDiscord(String title, String link) {
+        TextChannel channel = jda.getTextChannelById(DISCORD_CHANNEL_ID);
+        if (channel == null) {
+            System.err.println("Could not find text channel with ID: " + DISCORD_CHANNEL_ID);
+            return;
+        }
+
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("🎥 New Angry Snowboarder Upload!", link);
+        embed.setDescription("**" + title + "** @everyone");
+        embed.setThumbnail("https://i.ytimg.com/vi/" + lastVideoId + "/hqdefault.jpg"); // YouTube preview image
+        embed.setColor(0xFF0000); // YouTube red
+        embed.setTimestamp(OffsetDateTime.now());
+
+        channel.sendMessageEmbeds(embed.build()).queue();
+    }
 }
+
+
+

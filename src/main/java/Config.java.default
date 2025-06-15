@@ -18,4 +18,12 @@ public class Config {
     public static String CARD_URL() {
         return System.getenv("CARD_URL");
     }
+
+        public static String FEED_URL() {
+            return System.getenv("FEED_URL");
+        }
+
+        public static String DISCORD_CHANNEL_ID() {
+            return System.getenv(DISCORD_CHANNEL_ID);
+        }
 }

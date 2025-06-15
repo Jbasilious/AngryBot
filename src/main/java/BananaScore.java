@@ -9,9 +9,9 @@ import java.util.Objects;
 
 public class BananaScore {
 
-    public static void run(MessageReceivedEvent event){
+    public static void run(MessageReceivedEvent event) {
 
-        try{
+        try {
             DBTools.openConnection();
             ResultSet result = DBTools.selectGUILD_USER(event.getGuild().getId(), event.getAuthor().getId());
             DBTools.closeConnection();
@@ -24,11 +24,11 @@ public class BananaScore {
             String std = result.getString("STD");
             User author = event.getAuthor();            // author object
             String nickname = Objects.requireNonNull(event.getMember()).getEffectiveName();
-            AngryBot.eb.clear();
 
+            AngryBot.eb.clear();
             AngryBot.eb.setAuthor(nickname, null, author.getEffectiveAvatarUrl());
             AngryBot.eb.setTitle("Your Score", null);
-            AngryBot. eb.setColor(new Color(0xF7FF00));
+            AngryBot.eb.setColor(new Color(0xF7FF00));
             AngryBot.eb.addField("Total Bananas", Integer.toString(total), false);
             AngryBot.eb.addField("Current Bananas", Integer.toString(count), false);
             AngryBot.eb.addField("Gunked", Integer.toString(gunked), false);
@@ -39,7 +39,7 @@ public class BananaScore {
 
             event.getMessage().replyEmbeds(AngryBot.eb.build()).queue();
 
-        }catch (SQLException e){
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 

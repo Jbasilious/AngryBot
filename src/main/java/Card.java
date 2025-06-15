@@ -8,7 +8,6 @@ import retrofit2.Retrofit;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 
@@ -81,7 +80,7 @@ public class Card {
             CardService service = retrofit.create(CardService.class);
 
             int retryCount = 0;
-            retrofit2.Response<ResponseBody> res = null;
+            retrofit2.Response<ResponseBody> res;
             do {
                 res = isGif ? service.getSummon(card_id).execute() : service.getCard(card_id).execute();
                 retryCount++;
@@ -121,7 +120,7 @@ public class Card {
                     RequestBody.create(stream.readAllBytes(), MediaType.parse("image/*"))
             );
             int retryCount = 0;
-            retrofit2.Response<String> res = null;
+            retrofit2.Response<String> res;
             do {
                 res = service.uploadImage(RequestBody.create(image_name, MediaType.parse("text/plain")), part).execute();
                 retryCount++;

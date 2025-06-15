@@ -251,6 +251,8 @@ public class DBTools {
 
     }
 
+
+
     protected static void updateCOMMAND_KEYWORD(String COMMAND, String KEYWORD) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "UPDATE COMMAND_KEYWORD set KEYWORD=? WHERE COMMAND=? ")) {
@@ -286,7 +288,14 @@ public class DBTools {
         }
     }
     
-    
+    protected static ResultSet getAffiliates() throws SQLException{
+        try (PreparedStatement statement = connection.prepareStatement("SELECT KEYWORD as AFFILIATE, VALUE as LINK from COMMAND_KEYWORD WHERE COMMAND = 'link'")){
+            return statement.executeQuery();
+        }catch (SQLException throwables){
+    throwables.printStackTrace();
+        }
+        return null;
+    }
     
     private static String buildUpdateBananaJackpotQuery() {
         return "UPDATE GAMBLE SET BANANA_JACKPOT = ?";
