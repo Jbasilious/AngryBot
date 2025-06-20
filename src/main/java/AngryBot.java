@@ -441,9 +441,7 @@ public class AngryBot extends ListenerAdapter {
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                Document doc = DocumentBuilderFactory.newInstance()
-                        .newDocumentBuilder()
-                        .parse(new URL(FEED_URL).openStream());
+                Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new URL(FEED_URL).openStream());
 
                 doc.getDocumentElement().normalize();
 
@@ -451,11 +449,9 @@ public class AngryBot extends ListenerAdapter {
                 if (entries.getLength() > 0) {
                     Element entry = (Element) entries.item(0); // first video entry
 
-                    String videoId = entry.getElementsByTagName("yt:videoId")
-                            .item(0).getTextContent();
+                    String videoId = entry.getElementsByTagName("yt:videoId").item(0).getTextContent();
 
-                    String title = entry.getElementsByTagName("title")
-                            .item(0).getTextContent();
+                    String title = entry.getElementsByTagName("title").item(0).getTextContent();
 
                     // Find the <link rel="alternate" href="..."> element
                     NodeList links = entry.getElementsByTagName("link");
@@ -495,12 +491,13 @@ public class AngryBot extends ListenerAdapter {
 
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("🎥 New Angry Snowboarder Upload!", link);
-        embed.setDescription("**" + title + "** @everyone");
-        embed.setThumbnail("https://i.ytimg.com/vi/" + lastVideoId + "/hqdefault.jpg"); // YouTube preview image
+        embed.setDescription("**" + title + "**");
+        embed.setThumbnail("https://i.ytimg.com/vi/" + lastVideoId + "/hqdefault.jpg");
         embed.setColor(0xFF0000); // YouTube red
         embed.setTimestamp(OffsetDateTime.now());
 
-        channel.sendMessageEmbeds(embed.build()).queue();
+// Send @everyone with the embed
+        channel.sendMessage("@everyone").setEmbeds(embed.build()).queue();
     }
 }
 
